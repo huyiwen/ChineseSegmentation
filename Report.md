@@ -37,17 +37,21 @@ graph LR
 
 在求解最大值路径的过程中，我们发现我们得到的是一个特殊的有向无环图 ── 每一条边一定从左到右。因此这是一个简单的背包模型，在 $O(nm)$ 的时间复杂度内可以求解。但是我们发现 m 的大小往往远大于 n ── 往往标点符号已经是天然的分割，所以一个单句往往长度很小；但最后一个字相同的词平均有 12 个，但中位数仅有 1 个，1/4 位数也仅有 4 个。这表明样本分布极度不平均。如果直接采用背包算法将导致时间复杂度较高。因此我们采用 $O(n^2)$ 的子字符串算法，使用基于哈希的 `unordered_map` 快速查询每个子字符串是否存在以及存在时权重大小。
 
-最后，边的权重采用了 $w_i=-\ln n_i + \ln N$ 方式计算，其中 $N=\sum_{i\in Vocab}n_i$，推导过程详见 [分词分数计算](# 分词分数计算) 部分。
+我们形式化地表示一句话的分词结果和状态：用 $w_{i,j}=c_i,c_{i+1},\cdots,c_j$ 表示由 $j-i+1$ 个字组成的词，$n_{i,j}$ 表示当前词在词表中出现的次数。为此，我们设 $dp_i$ 为 $c_0,c_1,\cdots,c_i$ 子句的最佳分割方法。边的权重采用了 $w_{i,j}=\ln n_{i,j} - \ln N + p_{i,j}$ 方式计算，其中 $N=\sum_{i\in Vocab}n_i$、人工设计的罚项 $p_{i,j}=\log_{10}\left(P\left\{length=j-i+1\right\}\right) / n_{i,j}$（推导过程详见 [分词分数计算](# 分词分数计算) 部分）。
+
+由此可以得到状态转移方程 $dp_i = \max_{j<i}\{dp_j+w_{i,j}\}$。
 
 总时间复杂度为 $O(n^2)$ ，$n$ 为输入单句的长度。
+
+
 
 ## 4. 调试分析
 
 ### 中文
 
-本地化（又称国际化）一直是 C++ 软件的一大问题。网上关于本地化的资料并不全面，虽然在大多数机器上都能正常运行，但由于我的电脑在环境变量 `LC_ALL` 和 `locale` 库兼容性上的问题，并不能正常运行。使用以下方法初始化，并采用 `wstring`, `wcin`, `wcout` 的一系列 STL 库，可以成功在文件和命令行读写中文。经同学测试，Mac 和 Windows 系统在不同语言环境下均可以正常使用。
+本地化（又称国际化）一直是 C++ 软件的一大问题。网上关于本地化的资料并不全面，虽然在大多数机器上都能正常运行，但由于我的电脑在环境变量 `LC_ALL` 和 `locale` 库兼容性上的问题，并不能正常运行。使用以下方法初始化，并采用 `wstring`, `wcin`, `wcout` 的一系列 STL 库，可以成功在文件和命令行读写中文。经测试，Mac 系统在不同语言环境下均可以正常使用。
 
-<img src="/Users/huyiwen/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/a93ba4369c781fb8f7947977709ecfde/Message/MessageTemp/672af208bfe05fc6137827e014e9a2de/Image/143101673785629_.pic.jpg" alt="143101673785629_.pic" style="zoom:67%;" />
+<img src="/Users/huyiwen/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/a93ba4369c781fb8f7947977709ecfde/Message/MessageTemp/672af208bfe05fc6137827e014e9a2de/Image/143101673785629_.pic.jpg" alt="143101673785629_.pic" style="zoom: 50%;" />
 
 ### 分词分数计算
 
@@ -59,7 +63,19 @@ graph LR
 
 $$\begin{align*}P^\ast=-\ln P=-\sum_{i\in S}\ln P(w_i)\approx -\sum_{i\in S}\ln\frac{n_i}{N}=\sum_{i\in S}[-\ln n_i+\ln N]\end{align*}$$
 
-在词表中，长尾词的统计偏差往往很大。
+在词表中，长尾词的统计偏差往往很大。因此我们引入“罚项”来弥补数据不足，导致的频率近似概率时，所产生的误差。如果该词没有出现在词表中，则给予较大罚项。为了平滑曲线，使用 $e^{-\log_{10} n_{i,j}}$ 作为系数。
+
+$$p_{i,j}=e^{-\log_{10} n_{i,j}}\times \log(n_{\{length=j-i+1\}}/N)\approx\log_{10}\left(P\left\{length=j-i+1\right\}\right) / n_{i,j}$$
+
+此外，词表中词频过高的词往往会极大影响实验结果，因此我们对于词频在 $10000$ 以上的部分做了根方运算处理，以限制最大词频的影响。
+
+为了尽可能使得分词结果正确，我们反复调整了其中的参数，最终呈现出以上结果。在实验过程中我们深刻体会，可以帮助我们摆脱反复调整数据，也是机器学习算法被高度重视的原因之一。
+
+### 时间测试
+
+经测试，使用 `unordered_map` 构建索引平均用时 $0.2$ 秒，分词平均用时 $0.005$ 秒。
+
+<img src="/Users/huyiwen/Library/Application Support/typora-user-images/image-20230119002042715.png" alt="image-20230119002042715" style="zoom: 37%;" />
 
 ## 5. 用户使用说明
 
@@ -67,6 +83,4 @@ $$\begin{align*}P^\ast=-\ln P=-\sum_{i\in S}\ln P(w_i)\approx -\sum_{i\in S}\ln\
 
 ## 6. 测试结果
 
-
-
- 
+![image-20230119005109888](/Users/huyiwen/Library/Application Support/typora-user-images/image-20230119005109888.png) 从随机选取的五个句子中发现，分词结果达到较高准确度。
