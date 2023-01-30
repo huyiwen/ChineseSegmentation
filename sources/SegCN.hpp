@@ -15,7 +15,10 @@ using std::wstring;
 std::wstringstream DEBUG;
 #endif
 
+
+
 class Seg {
+
 
 private:
 
@@ -149,7 +152,7 @@ void segmentation(wstring input) {
     }
 
     auto end = std::chrono::system_clock::now();
-    std::wcout << L"分词成功,用时 " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1.0 * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << L" 秒\n" << std::endl;
+    DEBUG << L"分词成功,用时 " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1.0 * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << L" 秒\n" << std::endl;
 
 }
 
@@ -185,7 +188,7 @@ void _load(std::ifstream &ifs) {
     }
 
     auto end = std::chrono::system_clock::now();
-    std::wcout << L"加载词典成功,用时 " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1.0 * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << L" 秒" << std::endl;
+    DEBUG << L"加载词典成功,用时 " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1.0 * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << L" 秒" << std::endl;
 
 }
 
